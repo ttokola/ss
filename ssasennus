@@ -1,0 +1,19 @@
+#
+# Seurasivuston asennus
+#
+echo "SEURASIVUSTON ASENNUS"
+echo "*********************"
+
+# Onko git?
+echo ""
+echo "Tarkistetaan git..."
+if git --version > /dev/null 2> /dev/null
+        then 
+		echo "...ok"      
+        else 
+		echo "...Sinun on asennettava git koneellesi: http://git-scm.com/downloads"
+		exit 1
+fi
+
+exit 0
+
