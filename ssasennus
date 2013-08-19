@@ -1,4 +1,13 @@
 #
+# ASETUKSET
+# Koodi ladataan $INSTDIR/ss -hakemistoon
+#
+
+INSTDIR=~
+DIRNAME=ss
+PUBLICH=~/public_html
+
+#
 # Seurasivuston asennus
 #
 echo "SEURASIVUSTON ASENNUS"
@@ -14,6 +23,39 @@ if git --version > /dev/null 2> /dev/null
 		echo "...Sinun on asennettava git koneellesi: http://git-scm.com/downloads"
 		exit 1
 fi
+
+#
+# Ladataan sivustokoodi GitHubista
+#
+echo "Tarkistetrepon tilanne"
+cd $INSTDIR
+if cd $DIRNAME
+	then
+		echo "...Repositoriohakemisto on olemassa."
+		cnt=$(git remote -v 2> /dev/null | grep "https://github.com/ttokola/ss.git" -c)
+		if (( cnt == 0 ))
+			then
+				echo "......Ei oikea repositorio"
+				exit 1
+			else
+				echo "......Oikea repositorio"
+				
+		fi				
+	else
+		echo "...Repositoriota ei ole. Asennetaan SS-repositorio"
+		if git clone https://github.com/ttokola/ss.git $DIRNAME > /dev/null 2> /dev/null
+			then
+				echo "......ok"
+			else
+				echo "......Asennus ei onnistunut :("
+				exit 1
+			fi
+fi
+
+#
+# Ajetaan 
+#
+
 
 exit 0
 
