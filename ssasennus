@@ -111,7 +111,7 @@ if crontab -l 2> /dev/null | grep "${INSTDIR}${DIRNAME}ssasennus"
 			then
 				echo "0 0 * * * ${INSTDIR}${DIRNAME}ssasennus | mail -s 'Asennusraportti' $ADMINEMAIL" | crontab -
 			else
-				(crontab -l; echo "0 0 * * * ${INSTDIR}${DIRNAME}ssasennus | mail -s 'Asennusraportti' $ADMINEMAIL"") | sort | uniq | crontab -
+				(crontab -l; echo "0 0 * * * ${INSTDIR}${DIRNAME}ssasennus | mail -s 'Asennusraportti' $ADMINEMAIL") | sort | uniq | crontab -
 		fi
 fi
 
