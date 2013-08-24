@@ -22,7 +22,7 @@ if ! grep "^INSTDIR=.*/$" ssasetukset
 fi
 if ! grep "^ADMINEMAIL=.*@.*$" ssasetukset
 		then
-			echo "Asetustiedostosta puuttuu ADMINEMAIL=osoite
+			echo "Asetustiedostosta puuttuu ADMINEMAIL=osoite"
 			exit 1
 fi
 
