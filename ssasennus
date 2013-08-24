@@ -6,7 +6,7 @@
 #
 REPNAME=https://github.com/ttokola/ss.git
 DIRNAME=ss/
-BRANCH=master
+BRANCH=asennus
 
 echo "Tarkistetaan asetukset..."
 if [ ! -f ./ssasetukset ]
@@ -17,15 +17,69 @@ fi
 
 if ! grep "^INSTDIR=.*/$" ssasetukset
 		then
-			echo "Asetustiedostosta puuttuu asennushakemistomÔøΩÔøΩrittely INSTDIR=hakemisto/ (lopussa pitÔøΩÔøΩ olla kauttaviiva)"
+			echo "Asetustiedostosta puuttuu asennushakemistom‰‰rittely INSTDIR=hakemisto/ (lopussa pit‰‰ olla kauttaviiva)"
+			echo "INSTDIR=" >> ssasetukset
 			exit 1
 fi
 if ! grep "^ADMINEMAIL=.*@.*$" ssasetukset
 		then
 			echo "Asetustiedostosta puuttuu ADMINEMAIL=osoite"
+			echo "ADMINEMAIL=" >> ssasetukset
 			exit 1
 fi
-
+if ! grep "^SQLSERVER=.*$" ssasetukset
+		then
+			echo "Asetustiedostosta puuttuu SQLSERVER=tietokantapalvelimen osoite"
+			echo "SQLSERVER=" >> ssasetukset
+			exit 1
+fi
+if ! grep "^SQLDB=.*$" ssasetukset
+		then
+			echo "Asetustiedostosta puuttuu SQLDB=tietokannan nimi"
+			echo "SQLDB=" >> ssasetukset
+			exit 1
+fi
+if ! grep "^SQLADMIN=.*$" ssasetukset
+		then
+			echo "Asetustiedostosta puuttuu SQLADMIN=username"
+			echo "SQLADMIN=" >> ssasetukset
+			exit 1
+fi
+if ! grep "^SQLAPWD=.*$" ssasetukset
+		then
+			echo "Asetustiedostosta puuttuu SQLAPWD=salasana"
+			echo "SQLAPWD=" >> ssasetukset
+			exit 1
+if ! grep "^SQLUSER=.*$" ssasetukset
+		then
+			echo "Asetustiedostosta puuttuu SQLUSER=username"
+			echo "SQLUSER=" >> ssasetukset
+			exit 1
+fi
+if ! grep "^SQLUPWD=.*$" ssasetukset
+		then
+			echo "Asetustiedostosta puuttuu SQLUPWD=salasana"
+			echo "SQLUPWD=" >> ssasetukset
+			exit 1
+fi
+if ! grep "^SIVUSTO=.*$" ssasetukset
+		then
+			echo "Asetustiedostosta puuttuu SIVUSTO=sivuston nimi"
+			echo "SIVUSTO=" >> ssasetukset
+			exit 1
+fi
+if ! grep "^SIVUSTOLYHENNE=.*$" ssasetukset
+		then
+			echo "Asetustiedostosta puuttuu SIVUSTOLYHENNE=sivuston lyhenne"
+			echo "SIVUSTOLYHENNE=" >> ssasetukset
+			exit 1
+fi
+if ! grep "^SPOSTILOPPU=.*$" ssasetukset
+		then
+			echo "Asetustiedostosta puuttuu SIVUSTOLYHENNE=sivuston lyhenne"
+			echo "SPOSTILOPPU=" >> ssasetukset
+			exit 1
+fi
 
 source ssasetukset
 
@@ -45,58 +99,19 @@ if git --version > /dev/null 2> /dev/null
 		echo "...Sinun on asennettava git koneellesi: http://git-scm.com/downloads"
 		exit 1
 fi
-
-#
-# Ladataan sivustokoodi GitHubista
-#
-echo "Tarkistetaan repon tilanne"
-if [ ! -d "$INSTDIR" ]
-	then
-		echo "...Asennushakemistoa ei ole. Tarkista asetukset tai luo hakemisto"
+# Onko mysql?
+echo ""
+echo "Tarkistetaan MySQL..."
+if mysql --version > /dev/null 2> /dev/null
+        then 
+		echo "...ok"      
+        else 
+		echo "...Sinun on asennettava MySQL koneellesi."
 		exit 1
-	else
-		if [ ! -f "${INSTDIR}${DIRNAME}ssasetukset" ]
-			then
-				cp ssasetukset $INSTDIR
-		fi
 fi
 
-if [ -d "${INSTDIR}${DIRNAME}" ]
-	then
-		cd ${INSTDIR}${DIRNAME}
-		echo "...Repositoriohakemisto on olemassa."
-		cnt=$(git remote -v 2> /dev/null | grep "$REPNAME" -c)
-		if (( cnt == 0 ))
-			then
-				echo "......Ei oikea repositorio"
-				exit 1
-			else
-				echo "......Oikea repositorio"
-				utd=$(git pull $REPNAME $BRANCH 2> /dev/null | grep "Already up-to-date" -c)
-				if (( utd == 1 ))
-					then
-						echo "......Repositorio on ajan tasalla."
-					else
-						echo "......Repositorio ladattu GitHubista"
-				fi
 
-		fi				
-	else
-		echo "...Repositoriota ei ole. Asennetaan SS-repositorio"
-		if git clone https://github.com/ttokola/ss.git $DIRNAME > /dev/null 2> /dev/null
-			then
-				echo "......ok"
-			else
-				echo "......Asennus ei onnistunut :("
-				exit 1
-			fi
-fi
 
-#Siirret√§√§n asetukset
-if [ ! -f "${INSTDIR}${DIRNAME}ssasetukset" ]
-	then
-		mv ${INSTDIR}ssasetukset ${INSTDIR}${DIRNAME}ssasetukset
-fi
 #
 # Tarkistetaan cronjobit
 # 
@@ -114,6 +129,103 @@ if crontab -l 2> /dev/null | grep "${INSTDIR}${DIRNAME}ssasennus"
 				(crontab -l; echo "0 0 * * * ${INSTDIR}${DIRNAME}ssasennus | mail -s 'Asennusraportti' $ADMINEMAIL") | sort | uniq | crontab -
 		fi
 fi
+
+
+#
+# Ladataan sivustokoodi GitHubista
+#
+echo "Tarkistetaan repon tilanne"
+if [ ! -d "$INSTDIR" ]
+	then
+		echo "...Asennushakemistoa ei ole. Tarkista asetukset tai luo hakemisto"
+		exit 1
+	else
+		if [ ! -f "${INSTDIR}${DIRNAME}ssasetukset" ]
+			then
+				cp ssasetukset $INSTDIR
+		fi
+fi
+
+
+if [ -d "${INSTDIR}${DIRNAME}" ]
+	then
+		cd ${INSTDIR}${DIRNAME}
+		echo "...Repositoriohakemisto on olemassa."
+		cnt=$(git remote -v 2> /dev/null | grep "$REPNAME" -c)
+		if (( cnt == 0 ))
+			then
+				echo "......Ei oikea repositorio"
+				exit 1
+			else
+				echo "......Oikea repositorio"
+				utd=$(git pull $REPNAME $BRANCH 2> /dev/null | grep "Already up-to-date" -c)
+				if (( utd == 1 ))
+					then
+						echo "......Repositorio on ajan tasalla."
+						exit 1
+					else
+						echo "......Repositorio ladattu GitHubista"
+				fi
+
+		fi				
+	else
+		echo "...Repositoriota ei ole. Asennetaan SS-repositorio"
+		if git clone https://github.com/ttokola/ss.git $DIRNAME > /dev/null 2> /dev/null
+			then
+				echo "......ok"
+			else
+				echo "......Asennus ei onnistunut :("
+				exit 1
+			fi
+fi
+
+#Siirret‰‰n asetukset
+if [ ! -f "${INSTDIR}${DIRNAME}ssasetukset" ]
+	then
+		mv ${INSTDIR}ssasetukset ${INSTDIR}${DIRNAME}ssasetukset
+fi
+
+echo "Tarkistetaan GitHub OAuth-autentikaatiopoletti
+
+if [ -n "$OAUTH_TOKEN" ]
+	then
+		echo "...Poletti lˆytyi asetuksista"
+		sed -i 's/OAUTH_TOKEN=".*";/OAUTH_TOKEN="$OAUTH_TOKEN";/' inc/loki.php
+	else
+		echo "...Ei autentikaatiomuuttujia asetettuna asetuksissa"
+		echo "...T‰m‰ sivusto ei pysty lis‰‰m‰‰n virheraportteja GitHubiin"
+
+fi
+
+echo "Asetetaan SQL-k‰ytt‰j‰tunnukset
+		sed -i 's/SQLDB=".*";/SQLDB="$SQLDB";/' inc/tietokanta.php
+		sed -i 's/SQLSERVER=".*";/SQLSERVER="$SQLSERVER";/' inc/tietokanta.php
+		sed -i 's/SQLADMIN=".*";/SQLADMIN="$SQLADMIN";/' inc/tietokanta.php
+		sed -i 's/SQLAPWD=".*";/SQLAPWD="$SQLAPWD";/' inc/tietokanta.php
+		sed -i 's/SQLUSER=".*";/SQLUSER="$SQLUSER";/' inc/tietokanta.php
+		sed -i 's/SQLUPWD=".*";/SQLUPWD="$SQLUPWD";/' inc/tietokanta.php
+		echo "...Tehty!"
+
+echo "Luodaan muut asetukset"
+		sed -i 's/ADMINEMAIL=".*";/ADMINEMAIL="$ADMINEMAIL";/' inc/vakio.php
+		sed -i 's/SIVUSTO=".*";/SIVUSTO="$SIVUSTO";/' inc/vakio.php
+		sed -i 's/SIVUSTOLYHENNE=".*";/SIVUSTOLYHENNE="$SIVUSTOLYHENNE";/' inc/vakio.php
+		echo "...Tehty!"
+#
+#
+# Tietokantap‰ivitys!
+#
+# 1. Otetaan tietokannasta varmuuskopio
+# 2. Ajetaan tietokannanp‰ivitysohjelma
+# 3. Ok/Eok
+
+
+# Koodiston asennus
+# 
+# Jos ollaan t‰‰ll‰ asti, on joko tuore asennus tai koodi on p‰ivittynyt
+#
+# Huom! Paikalliset muutokset suoraan asennukseen vedet‰‰n armotta p‰‰lt‰. Jos muutoksia tarvitaan, ne pit‰‰ tehd‰ asennusriippumattomiksi ja ajaa repoon!
+#
 
 
 exit 0
