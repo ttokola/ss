@@ -1,11 +1,28 @@
 #
 # ASETUKSET
+#
+# Ladataan paikalliset asetukset
 # Koodi ladataan $INSTDIR/ss -hakemistoon
 #
+REPNAME=https://github.com/ttokola/ss.git
 
-INSTDIR=~
-DIRNAME=ss
-PUBLICH=~/public_html
+echo "Tarkistetaan asetukset..."
+if [ ! -f ./ssasetukset ]
+	then
+		echo "...Ei paikallisia asetuksia. Luo ssasetukset -niminen tiedosto, johon tarvittavat asetukset. Tai lataa esimerkki reposta"
+		exit 1	
+fi
+
+if ! grep "^INSTDIR=.*/$" ssasetukset
+		then
+			echo "Asetustiedostosta puuttuu asennushakemistomäärittely INSTDIR=hakemisto/ (lopussa pitää olla kauttaviiva)"
+			exit 1
+fi
+if ! grep "^DIRNAME=.*/$" ssasetukset
+		then
+			(cat ssasetukset; echo "DIRNAME=ss/") > ssasetukset
+fi
+source ssasetukset
 
 #
 # Seurasivuston asennus
@@ -27,19 +44,32 @@ fi
 #
 # Ladataan sivustokoodi GitHubista
 #
-echo "Tarkistetrepon tilanne"
+echo "Tarkistetaan repon tilanne"
+if [ ! -d "$INSTDIR" ]
+	then
+		echo "...Asennushakemistoa ei ole. Tarkista asetukset tai luo hakemisto"
+		exit 1
+fi
+
 cd $INSTDIR
 if cd $DIRNAME
 	then
 		echo "...Repositoriohakemisto on olemassa."
-		cnt=$(git remote -v 2> /dev/null | grep "https://github.com/ttokola/ss.git" -c)
+		cnt=$(git remote -v 2> /dev/null | grep "$REPNAME" -c)
 		if (( cnt == 0 ))
 			then
 				echo "......Ei oikea repositorio"
 				exit 1
 			else
 				echo "......Oikea repositorio"
-				
+				utd=$(git pull $REPNAME 2> /dev/null | grep "Already up-to-date" -c)
+				if (( utd == 1 ))
+					then
+						echo "......Repositorio on ajan tasalla."
+					else
+						echo "......Repositorio ladattu GitHubista"
+				fi
+
 		fi				
 	else
 		echo "...Repositoriota ei ole. Asennetaan SS-repositorio"
@@ -53,8 +83,22 @@ if cd $DIRNAME
 fi
 
 #
-# Ajetaan 
+# Tarkistetaan cronjobit
 #
+#
+echo "Tarkastetaan Crontab"
+if crontab -l 2> /dev/null | grep "${INSTDIR}${DIRNAME}ssasennus"
+	then
+		echo "...ok!"
+	else
+		echo "...Asetetaan crontab tarkastamaan asennus aika-ajoin"
+		if ! crontab -l 2> /dev/null
+			then
+				echo "0 0 * * * ${INSTDIR}${DIRNAME}ssasennus" | crontab -
+			else
+				(crontab -l; echo "0 0 * * * ${INSTDIR}${DIRNAME}ssasennus") | sort | uniq | crontab -
+		fi
+fi
 
 
 exit 0
