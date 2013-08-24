@@ -19,6 +19,13 @@ if ! grep "^INSTDIR=.*/$" ssasetukset
 			echo "Asetustiedostosta puuttuu asennushakemistom��rittely INSTDIR=hakemisto/ (lopussa pit�� olla kauttaviiva)"
 			exit 1
 fi
+if ! grep "^ADMINEMAIL=.*@.*$" ssasetukset
+		then
+			echo "Asetustiedostosta puuttuu ADMINEMAIL=osoite
+			exit 1
+fi
+
+
 source ssasetukset
 
 #
@@ -53,9 +60,9 @@ if [ ! -d "$INSTDIR" ]
 		fi
 fi
 
-cd $INSTDIR
-if cd $DIRNAME
+if [ -d "${INSTDIR}${DIRNAME}" ]
 	then
+		cd ${INSTDIR}${DIRNAME}
 		echo "...Repositoriohakemisto on olemassa."
 		cnt=$(git remote -v 2> /dev/null | grep "$REPNAME" -c)
 		if (( cnt == 0 ))
@@ -91,7 +98,7 @@ if [ ! -f "${INSTDIR}${DIRNAME}ssasetukset" ]
 fi
 #
 # Tarkistetaan cronjobit
-#
+# 
 #
 echo "Tarkastetaan Crontab"
 if crontab -l 2> /dev/null | grep "${INSTDIR}${DIRNAME}ssasennus"
@@ -101,9 +108,9 @@ if crontab -l 2> /dev/null | grep "${INSTDIR}${DIRNAME}ssasennus"
 		echo "...Asetetaan crontab tarkastamaan asennus aika-ajoin"
 		if ! crontab -l 2> /dev/null
 			then
-				echo "0 0 * * * ${INSTDIR}${DIRNAME}ssasennus" | crontab -
+				echo "0 0 * * * ${INSTDIR}${DIRNAME}ssasennus | mail -s 'Asennusraportti' $ADMINEMAIL" | crontab -
 			else
-				(crontab -l; echo "0 0 * * * ${INSTDIR}${DIRNAME}ssasennus") | sort | uniq | crontab -
+				(crontab -l; echo "0 0 * * * ${INSTDIR}${DIRNAME}ssasennus | mail -s 'Asennusraportti' $ADMINEMAIL"") | sort | uniq | crontab -
 		fi
 fi
 
