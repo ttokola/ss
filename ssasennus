@@ -6,6 +6,7 @@
 #
 REPNAME=https://github.com/ttokola/ss.git
 DIRNAME=ss/
+BRANCH=master
 
 echo "Tarkistetaan asetukset..."
 if [ ! -f ./ssasetukset ]
@@ -71,7 +72,7 @@ if [ -d "${INSTDIR}${DIRNAME}" ]
 				exit 1
 			else
 				echo "......Oikea repositorio"
-				utd=$(git pull $REPNAME 2> /dev/null | grep "Already up-to-date" -c)
+				utd=$(git pull $REPNAME $BRANCH 2> /dev/null | grep "Already up-to-date" -c)
 				if (( utd == 1 ))
 					then
 						echo "......Repositorio on ajan tasalla."
