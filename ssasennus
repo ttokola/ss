@@ -15,72 +15,76 @@ if [ ! -f ./ssasetukset ]
 		exit 1	
 fi
 
-if ! grep "^INSTDIR=.*/$" ssasetukset
+if ! grep -q "^INSTDIR=.*/$" ssasetukset
 		then
 			echo "Asetustiedostosta puuttuu asennushakemistomäärittely INSTDIR=hakemisto/ (lopussa pitää olla kauttaviiva)"
 			echo "INSTDIR=" >> ssasetukset
 			exit 1
 fi
-if ! grep "^ADMINEMAIL=.*@.*$" ssasetukset
+if ! grep -q "^ADMINEMAIL=.*@.*$" ssasetukset
 		then
 			echo "Asetustiedostosta puuttuu ADMINEMAIL=osoite"
 			echo "ADMINEMAIL=" >> ssasetukset
 			exit 1
 fi
-if ! grep "^SQLSERVER=.*$" ssasetukset
+if ! grep -q "^SQLSERVER=.*$" ssasetukset
 		then
 			echo "Asetustiedostosta puuttuu SQLSERVER=tietokantapalvelimen osoite"
 			echo "SQLSERVER=" >> ssasetukset
 			exit 1
 fi
-if ! grep "^SQLDB=.*$" ssasetukset
+if ! grep -q "^SQLDB=.*$" ssasetukset
 		then
 			echo "Asetustiedostosta puuttuu SQLDB=tietokannan nimi"
 			echo "SQLDB=" >> ssasetukset
 			exit 1
 fi
-if ! grep "^SQLADMIN=.*$" ssasetukset
+if ! grep -q "^SQLADMIN=.*$" ssasetukset
 		then
 			echo "Asetustiedostosta puuttuu SQLADMIN=username"
 			echo "SQLADMIN=" >> ssasetukset
 			exit 1
 fi
-if ! grep "^SQLAPWD=.*$" ssasetukset
+
+if ! grep -q "^SQLAPWD=.*$" ssasetukset
 		then
 			echo "Asetustiedostosta puuttuu SQLAPWD=salasana"
 			echo "SQLAPWD=" >> ssasetukset
 			exit 1
-if ! grep "^SQLUSER=.*$" ssasetukset
+fi
+
+if ! grep -q "^SQLUSER=.*$" ssasetukset
 		then
 			echo "Asetustiedostosta puuttuu SQLUSER=username"
 			echo "SQLUSER=" >> ssasetukset
 			exit 1
 fi
-if ! grep "^SQLUPWD=.*$" ssasetukset
+if ! grep -q "^SQLUPWD=.*$" ssasetukset
 		then
 			echo "Asetustiedostosta puuttuu SQLUPWD=salasana"
 			echo "SQLUPWD=" >> ssasetukset
 			exit 1
 fi
-if ! grep "^SIVUSTO=.*$" ssasetukset
+if ! grep -q "^SIVUSTO=.*$" ssasetukset
 		then
 			echo "Asetustiedostosta puuttuu SIVUSTO=sivuston nimi"
 			echo "SIVUSTO=" >> ssasetukset
 			exit 1
 fi
-if ! grep "^SIVUSTOLYHENNE=.*$" ssasetukset
+if ! grep -q "^SIVUSTOLYHENNE=.*$" ssasetukset
 		then
 			echo "Asetustiedostosta puuttuu SIVUSTOLYHENNE=sivuston lyhenne"
 			echo "SIVUSTOLYHENNE=" >> ssasetukset
 			exit 1
 fi
-if ! grep "^SPOSTILOPPU=.*$" ssasetukset
+if ! grep -q "^SPOSTILOPPU=.*$" ssasetukset
 		then
 			echo "Asetustiedostosta puuttuu SIVUSTOLYHENNE=sivuston lyhenne"
 			echo "SPOSTILOPPU=" >> ssasetukset
 			exit 1
 fi
 
+echo "Ladataan..."
 source ssasetukset
 
 #
@@ -116,17 +120,19 @@ fi
 # Tarkistetaan cronjobit
 # 
 #
+
 echo "Tarkastetaan Crontab"
-if crontab -l 2> /dev/null | grep "${INSTDIR}${DIRNAME}ssasennus"
+if crontab -l 2> /dev/null | grep -q "${INSTDIR}${DIRNAME}ssasennus"
 	then
-		echo "...ok!"
+		echo "...Crontab asennettu jo, v!"
+		crontab -l | sed '${INSTDIR}${DIRNAME}ssasennus/c \ 0 0 * * * cd ${INSTDIR}${DIRNAME} && ${INSTDIR}${DIRNAME}ssasennus | mail -s 'Asennusraportti' $ADMINEMAIL' | crontab
 	else
 		echo "...Asetetaan crontab tarkastamaan asennus aika-ajoin"
 		if ! crontab -l 2> /dev/null
 			then
-				echo "0 0 * * * ${INSTDIR}${DIRNAME}ssasennus | mail -s 'Asennusraportti' $ADMINEMAIL" | crontab -
+				echo "0 0 * * * cd ${INSTDIR}${DIRNAME} && ${INSTDIR}${DIRNAME}ssasennus | mail -s 'Asennusraportti' $ADMINEMAIL" | crontab -
 			else
-				(crontab -l; echo "0 0 * * * ${INSTDIR}${DIRNAME}ssasennus | mail -s 'Asennusraportti' $ADMINEMAIL") | sort | uniq | crontab -
+				(crontab -l; echo "0 0 * * * cd ${INSTDIR}${DIRNAME} && ${INSTDIR}${DIRNAME}ssasennus | mail -s 'Asennusraportti' $ADMINEMAIL") | sort | uniq | crontab -
 		fi
 fi
 
@@ -151,22 +157,19 @@ if [ -d "${INSTDIR}${DIRNAME}" ]
 	then
 		cd ${INSTDIR}${DIRNAME}
 		echo "...Repositoriohakemisto on olemassa."
-		cnt=$(git remote -v 2> /dev/null | grep "$REPNAME" -c)
-		if (( cnt == 0 ))
+		if git remote -v 2> /dev/null | grep -q "$REPNAME"
 			then
-				echo "......Ei oikea repositorio"
-				exit 1
-			else
 				echo "......Oikea repositorio"
-				utd=$(git pull $REPNAME $BRANCH 2> /dev/null | grep "Already up-to-date" -c)
-				if (( utd == 1 ))
+				if git pull $REPNAME $BRANCH 2> /dev/null | grep -q "Already up-to-date"
 					then
 						echo "......Repositorio on ajan tasalla."
 						exit 1
 					else
 						echo "......Repositorio ladattu GitHubista"
 				fi
-
+			else
+				echo "......Ei oikea repositorio"
+				exit 1
 		fi				
 	else
 		echo "...Repositoriota ei ole. Asennetaan SS-repositorio"
@@ -229,4 +232,3 @@ echo "Luodaan muut asetukset"
 
 
 exit 0
-
